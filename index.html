@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>BLOOD RUN: Nyamuk vs Manusia</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        /* --- LOADING SCREEN --- */
+        #loading-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+
+        .loading-logo {
+            max-width: 180px;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255,77,77,0.4)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(255,77,77,0.8)); }
+            100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255,77,77,0.4)); }
+        }
+
+        .fade-out { opacity: 0; visibility: hidden; }
+
+        /* --- UI ELEMENTS --- */
+        #main-menu, #game-container {
+            background: #2d2d2d;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        #main-menu { display: flex; flex-direction: column; align-items: center; }
+
+        .menu-logo { max-width: 140px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(255, 77, 77, 0.5)); }
+
+        /* --- INFO BAR --- */
+        .game-info {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            font-size: 0.8rem;
+            color: #ccc;
+        }
+        .info-pill {
+            background: #3d3d3d;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: white;
+            margin: 5px;
+        }
+
+        .btn-red { background: #ff4d4d; }
+        .btn-red:hover { background: #cc0000; transform: scale(1.05); }
+        .btn-red:disabled { background: #555; cursor: not-allowed; }
+        
+        .btn-grey { background: #555; }
+        .btn-grey:hover { background: #444; }
+
+        /* --- MUSIC BUTTON --- */
+        .audio-controls { margin-top: 20px; border-top: 1px solid #444; padding-top: 15px; }
+        #music-btn {
+            background: transparent;
+            border: 2px solid #666;
+            color: #aaa;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        #music-btn.playing {
+            border-color: #ff4d4d;
+            color: #ff4d4d;
+            box-shadow: 0 0 10px rgba(255, 77, 77, 0.2);
+        }
+
+        /* --- BOARD STYLE --- */
+        .board {
+            display: flex; justify-content: space-between; margin: 40px 0;
+            padding: 10px; background: #111; border-radius: 8px;
+            position: relative; height: 80px; align-items: center; border: 2px solid #333;
+        }
+
+        .slot { flex: 1; height: 100%; border-right: 1px solid #333; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 5px; font-size: 0.75rem; color: #666; }
+        .slot:last-child { border-right: none; }
+
+        .pion { position: absolute; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); top: 50%; transform: translateY(-50%); }
+        #human-pion { width: 50px; height: 50px; z-index: 10; filter: drop-shadow(0 0 8px #4dadff); }
+        #mosquito-pion { width: 86px; height: 86px; z-index: 11; filter: drop-shadow(0 0 10px #ff4d4d); }
+        .pion img { width: 100%; height: 100%; object-fit: contain; }
+
+        /* --- STATUS BOX --- */
+        .status-box { margin-top: 20px; padding: 15px; border-left: 5px solid #ff4d4d; background: #383838; min-height: 80px; text-align: left; border-radius: 4px; }
+        .dice-result { font-size: 1.1rem; font-weight: bold; color: #ffca28; margin-top: 5px; }
+        
+        /* --- RULEBOOK MODAL --- */
+        #rulebook-modal {
+            display: none; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92); z-index: 200; 
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        #rulebook-modal img { 
+            width: 250px; 
+            height: auto; 
+            border: 3px solid #ff4d4d; 
+            border-radius: 12px; 
+            box-shadow: 0 0 25px rgba(255, 77, 77, 0.4);
+        }
+        .win-display-img { max-width: 120px; margin-top: 10px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-music" loop>
+        <source src="Shiki OP 1 [Blu-Ray].mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="loading-screen">
+        <img src="logo.png" alt="LOGO" class="loading-logo">
+        <div style="color:#ff4d4d; letter-spacing:4px; margin-top:10px; font-weight:bold;">LOADING...</div>
+    </div>
+
+    <div id="main-menu">
+        <img src="logo.png" alt="BLOOD RUN" class="menu-logo">
+        
+        <div class="game-info">
+            <div class="info-pill">👤 1 Pemain</div>
+            <div class="info-pill">🩸 13+ Tahun</div>
+            <div class="info-pill">⏱️ 5-10 Menit</div>
+        </div>
+
+        <button class="btn btn-red" style="width: 220px;" onclick="startGame()">1. Play Game</button>
+        <button class="btn btn-grey" style="width: 220px;" onclick="toggleRulebook(true)">2. Rulebook</button>
+    </div>
+
+    <div id="rulebook-modal">
+        <img src="rulebook.png" alt="Rulebook">
+        <button class="btn btn-grey" onclick="toggleRulebook(false)" style="margin-top:20px;">Kembali</button>
+    </div>
+
+    <div id="game-container" style="display:none;">
+        <div class="board" id="board">
+            <div class="slot">0</div><div class="slot">1</div><div class="slot">2</div>
+            <div class="slot">3</div><div class="slot">4</div><div class="slot">5</div>
+            <div class="slot">6</div><div class="slot">7</div><div class="slot">8</div>
+            <div class="slot">9</div><div class="slot">10</div>
+            
+            <div id="mosquito-pion" class="pion"><img src="nyamukkarakter.png" alt="🦟"></div>
+            <div id="human-pion" class="pion"><img src="manusiakarakter.png" alt="🏃"></div>
+        </div>
+
+        <div class="status-box">
+            <div id="message">Nyamuk lapar mengincarmu! Lari!</div>
+            <div id="dice-val" class="dice-result"></div>
+        </div>
+
+        <div class="controls" style="margin-top:25px;">
+            <button id="roll-btn" class="btn btn-red" onclick="playTurn()">Kocok Dadu</button>
+            <button class="btn btn-grey" onclick="backToMenu()">Menu Utama</button>
+            
+            <div class="audio-controls">
+                <button id="music-btn" onclick="toggleMusic()">🎵 Music: OFF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const bgMusic = document.getElementById('bg-music');
+        const musicBtn = document.getElementById('music-btn');
+        let isPlaying = false;
+
+        function toggleMusic() {
+            if (isPlaying) {
+                bgMusic.pause();
+                musicBtn.innerText = "🎵 Music: OFF";
+                musicBtn.classList.remove('playing');
+            } else {
+                bgMusic.play().catch(e => console.log("User interaction required"));
+                musicBtn.innerText = "🎶 Music: ON";
+                musicBtn.classList.add('playing');
+            }
+            isPlaying = !isPlaying;
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(() => { document.getElementById('loading-screen').classList.add('fade-out'); }, 2000);
+        });
+
+        let humanPos = 3, mosquitoPos = 0, gameOver = false;
+        const maxPos = 10;
+
+        function startGame() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            resetGame();
+        }
+
+        function toggleRulebook(show) { document.getElementById('rulebook-modal').style.display = show ? 'flex' : 'none'; }
+        
+        function backToMenu() {
+            document.getElementById('main-menu').style.display = 'flex';
+            document.getElementById('game-container').style.display = 'none';
+        }
+
+        function updatePositions() {
+            const board = document.getElementById('board');
+            if (!board.clientWidth) return;
+            const stepWidth = (board.clientWidth - 20) / 10;
+            document.getElementById('human-pion').style.left = (humanPos * stepWidth - 15) + 'px';
+            document.getElementById('mosquito-pion').style.left = (mosquitoPos * stepWidth - 35) + 'px';
+        }
+
+        function playTurn() {
+            if (gameOver) return;
+
+            const hRoll = Math.floor(Math.random() * 6) + 1;
+            let move = hRoll >= 4 ? hRoll - 3 : 0;
+            humanPos = Math.min(humanPos + move, maxPos);
+            
+            document.getElementById('dice-val').innerText = `Dadu Kamu: ${hRoll} (Maju ${move})`;
+            updatePositions();
+
+            if (humanPos >= 10) return endGame("SELAMAT! Kamu berhasil kabur!", "#4dadff");
+
+            document.getElementById('roll-btn').disabled = true;
+            document.getElementById('message').innerText = "Nyamuk sedang terbang...";
+
+            setTimeout(() => {
+                const mRoll = Math.floor(Math.random() * 6) + 1;
+                let mMove = mRoll >= 4 ? mRoll - 3 : 0;
+                mosquitoPos += mMove;
+                
+                document.getElementById('dice-val').innerText += ` | Dadu Nyamuk: ${mRoll} (Maju ${mMove})`;
+                updatePositions();
+
+                if (mosquitoPos >= humanPos) {
+                    endGame("PLAK! Kamu kena gigit! MATI.", "#ff4d4d");
+                } else {
+                    document.getElementById('roll-btn').disabled = false;
+                    document.getElementById('message').innerText = "Ayo lari lagi!";
+                }
+            }, 800);
+        }
+
+        function endGame(msg, color) {
+            gameOver = true;
+            const winImg = color === "#4dadff" ? "manusiamenang.png" : "nyamukmenang.png";
+            const msgEl = document.getElementById('message');
+            msgEl.innerHTML = `<div>${msg}</div><img src="${winImg}" class="win-display-img">`;
+            msgEl.style.color = color;
+            document.getElementById('roll-btn').disabled = true;
+        }
+
+        function resetGame() {
+            humanPos = 3; mosquitoPos = 0; gameOver = false;
+            document.getElementById('message').innerText = "Nyamuk lapar mengincarmu! Lari!";
+            document.getElementById('message').style.color = "#e0e0e0";
+            document.getElementById('dice-val').innerText = "";
+            document.getElementById('roll-btn').disabled = false;
+            setTimeout(updatePositions, 50);
+        }
+
+        window.onresize = updatePositions;
+    </script>
+</body>
+</html>
