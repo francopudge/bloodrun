@@ -131,7 +131,7 @@
             z-index: 10;
         }
         
-        #human-pion { width: 28px; height: 28px; filter: drop-shadow(0 0 8px #4dadff); }
+        #human-pion { width: 28px; height: 28Apx; filter: drop-shadow(0 0 8px #4dadff); }
         #mosquito-pion { width: 45px; height: 45px; filter: drop-shadow(0 0 10px #ff4d4d); z-index: 11; }
         
         .pion img { width: 100%; height: 100%; object-fit: contain; }
@@ -169,8 +169,10 @@
              <div class="info-pill">🕒 5m-10m</div>
         </div>
         <button class="btn btn-red" style="width: 220px;" onclick="startGame()">1. Play Game</button>
-        <button class="btn btn-grey" style="width: 220px;" onclick="toggleRulebook(true)">2. Rulebook</button>
-    </div>
+        <button class="btn btn-red" style="width: 220px;" onclick="toggleRulebook(true)">2. Rulebook</button>
+        <button id="btnGame" class="btn btn-red" style="width: 220px;">
+        3. KGAME
+    </button>
 
     <div id="rulebook-modal">
         <img src="rulebook.png" alt="Rulebook">
@@ -311,6 +313,14 @@
             document.getElementById('roll-btn').disabled = false;
             updatePositions();
         }
+
+        // Mengambil tombol berdasarkan ID
+const tombol = document.getElementById('btnGame');
+
+// Memberikan perintah klik
+tombol.onclick = function() {
+    window.location.href = 'https://francopudge.github.io/game/';
+};
     </script>
 </body>
 </html>
